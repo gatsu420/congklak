@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use std::cmp::Ordering;
 use rand::Rng;
 
+
 fn input_form() -> Result<i32, io::Error> {
     println!("Please enter location:");
     let mut loc_input = String::new();
