@@ -1,7 +1,7 @@
-use std::io;
-use std::collections::BTreeMap;
-use std::cmp::Ordering;
 use rand::Rng;
+use std::cmp::Ordering;
+use std::collections::BTreeMap;
+use std::io;
 
 fn input_form() -> Result<i32, io::Error> {
     println!("Please enter location:");
@@ -9,7 +9,12 @@ fn input_form() -> Result<i32, io::Error> {
     io::stdin().read_line(&mut loc_input)?;
     let loc = match loc_input.trim().parse() {
         Ok(l) => l,
-        Err(_) => return Err(io::Error::new(io::ErrorKind::InvalidInput, "Hole location must be numeric")),
+        Err(_) => {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Hole location must be numeric",
+            ))
+        }
     };
 
     Ok(loc)
@@ -36,16 +41,15 @@ fn move_bean() -> Result<BTreeMap<i32, i32>, io::Error> {
 
     loop {
         draw_ui(&state);
-        
+
         let loc = input_form()?;
-        // println!("Loc: {}", loc);
 
         let nbean = state.get(&loc).copied().unwrap_or(0);
         state.insert(loc, 0);
 
         let mut i = loc;
         for _ in 0..nbean {
-            i = if i == 13 {0} else {i + 1};
+            i = if i == 13 { 0 } else { i + 1 };
             *state.entry(i).or_insert(0) += 1;
         }
 
@@ -70,17 +74,12 @@ fn move_bean() -> Result<BTreeMap<i32, i32>, io::Error> {
         }
     }
     println!();
-    
+
     Ok(state)
 }
 
 fn draw_ui(state: &BTreeMap<i32, i32>) {
     // Janky aesthetics
-    // for (k, v) in state.iter() {
-    //     if *k == 0 {
-    //         print!("--------[{}]-------", v);
-    //     }
-    // }
     println!();
     print!("    ");
     for (k, v) in state.iter() {
@@ -109,11 +108,6 @@ fn draw_ui(state: &BTreeMap<i32, i32>) {
     }
 
     println!();
-    // for (k, v) in state.iter() {
-    //     if *k == 7 {
-    //         print!("--------[{}]-------", v);
-    //     }
-    // }
     println!();
 }
 
