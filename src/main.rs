@@ -32,7 +32,7 @@ fn init_state() -> BTreeMap<i32, i32> {
     state
 }
 
-fn move_bean() -> Result<BTreeMap<i32, i32>, io::Error> {
+fn generate_state() -> Result<BTreeMap<i32, i32>, io::Error> {
     let mut state = init_state();
     let mut csum = 0;
     for v in state.values() {
@@ -47,11 +47,8 @@ fn move_bean() -> Result<BTreeMap<i32, i32>, io::Error> {
         let nbean = state.get(&loc).copied().unwrap_or(0);
         state.insert(loc, 0);
 
-        let mut i = loc;
-        for _ in 0..nbean {
-            i = if i == 13 { 0 } else { i + 1 };
-            *state.entry(i).or_insert(0) += 1;
-        }
+        let i = loc;
+        move_bean(nbean, i, &mut state);
 
         let mut vsum = 0;
         for (k, v) in state.iter() {
@@ -76,6 +73,13 @@ fn move_bean() -> Result<BTreeMap<i32, i32>, io::Error> {
     println!();
 
     Ok(state)
+}
+
+fn move_bean(nbean: i32, mut i: i32, state: &mut BTreeMap<i32, i32>) {
+    for _ in 0..nbean {
+        i = if i == 13 { 0 } else { i + 1 };
+        *state.entry(i).or_insert(0) += 1;
+    }
 }
 
 fn draw_ui(state: &BTreeMap<i32, i32>) {
@@ -114,7 +118,7 @@ fn draw_ui(state: &BTreeMap<i32, i32>) {
 fn main() {
     println!("Hole location is denoted by 0-13, going from leftmost in clockwise.");
 
-    match move_bean() {
+    match generate_state() {
         Ok(_) => println!("Thank you for playing"),
         Err(e) => eprintln!("Error: {}", e),
     }
