@@ -34,21 +34,27 @@ fn init_state() -> BTreeMap<i32, i32> {
 
 fn generate_state() -> Result<BTreeMap<i32, i32>, io::Error> {
     let mut state = init_state();
+    let mut turn_a: bool = true;
     let mut csum = 0;
     for v in state.values() {
         csum += v;
     }
-
+    
+    println!("It is A's turn");
+    
     loop {
         draw_ui(&state);
-
+        
         let loc = input_form()?;
-
+        
         let nbean = state.get(&loc).copied().unwrap_or(0);
         state.insert(loc, 0);
-
+        
         let i = loc;
-        move_bean(nbean, i, &mut state);
+        let p = move_bean(nbean, i, turn_a, &mut state);
+        turn_a = p;
+        println!("It is {}'s turn", if p { "A" } else { "B" });
+
 
         let mut vsum = 0;
         for (k, v) in state.iter() {
@@ -75,11 +81,18 @@ fn generate_state() -> Result<BTreeMap<i32, i32>, io::Error> {
     Ok(state)
 }
 
-fn move_bean(nbean: i32, mut i: i32, state: &mut BTreeMap<i32, i32>) {
+fn move_bean(nbean: i32, mut i: i32, turn_a: bool, state: &mut BTreeMap<i32, i32>) -> bool {
     for _ in 0..nbean {
         i = if i == 13 { 0 } else { i + 1 };
         *state.entry(i).or_insert(0) += 1;
     }
+
+    let turn_a_ret = match *state.entry(i).or_insert(0) == 1 {
+        true => !turn_a,
+        false => turn_a,
+    };
+
+    turn_a_ret
 }
 
 fn draw_ui(state: &BTreeMap<i32, i32>) {
