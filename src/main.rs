@@ -103,7 +103,7 @@ fn generate_state() -> Result<BTreeMap<i32, i32>, io::Error> {
         is_eligible_for_draw_ui = false;
         is_start = false;
 
-        println!("It is {}'s turn", if turn_a { "A" } else { "B" });
+        println!("It is {}'s turn", if turn_a { "A" } else { "B" }); 
         
         let mut vsum = 0;
         for (k, v) in state.iter() {
