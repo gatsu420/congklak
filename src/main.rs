@@ -8,14 +8,22 @@ fn input_form() -> Result<i32, io::Error> {
     let mut loc_input = String::new();
     io::stdin().read_line(&mut loc_input)?;
     let loc = match loc_input.trim().parse() {
-        Ok(l) => l,
+        Ok(l) if l != 0 && l != 7 => l,
+        Ok(_) => {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Hole location must not be 0 or 7",
+            ));
+        }
         Err(_) => {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 "Hole location must be numeric",
-            ))
+            ));
         }
     };
+    println!();
+    println!();
 
     Ok(loc)
 }
@@ -34,28 +42,69 @@ fn init_state() -> BTreeMap<i32, i32> {
 
 fn generate_state() -> Result<BTreeMap<i32, i32>, io::Error> {
     let mut state = init_state();
+    let mut sim_state = state.clone();
+    let mut is_eligible_for_move: bool = false;
+    let mut is_eligible_for_draw_ui: bool = false;
+    let mut last_key: Option<i32> = None;
+    let mut is_start: bool = true;
+
     let mut turn_a: bool = true;
     let mut csum = 0;
     for v in state.values() {
         csum += v;
     }
-    
+
     println!("It is A's turn");
-    
+
     loop {
-        draw_ui(&state);
-        
+        if is_start {
+            draw_ui(&state);
+        }
+
         let loc = input_form()?;
+        let i = loc;
         
         let nbean = state.get(&loc).copied().unwrap_or(0);
-        state.insert(loc, 0);
+        let sim_nbean = sim_state.get(&loc).copied().unwrap_or(0);
         
-        let i = loc;
-        let p = move_bean(nbean, i, turn_a, &mut state);
-        turn_a = p;
-        println!("It is {}'s turn", if p { "A" } else { "B" });
+        if last_key == None {
+            let (_, sim_last_key) = move_bean(sim_nbean, i, turn_a, &mut sim_state);
+            last_key = Some(sim_last_key);
 
+            state.insert(loc, 0);
 
+            is_eligible_for_move = true;
+            is_eligible_for_draw_ui = true;
+        } else if i != last_key.expect("msg") {
+            println!("You need to input {} on this turn", last_key.expect("msg"));
+
+            is_eligible_for_move = false;
+            is_eligible_for_draw_ui = true;
+        } else if i == last_key.expect("msg") {
+            let (_, sim_last_key) = move_bean(sim_nbean, i, turn_a, &mut sim_state);
+            last_key = Some(sim_last_key);
+
+            state.insert(loc, 0);
+
+            is_eligible_for_move = true;
+            is_eligible_for_draw_ui = true;
+        }
+        
+        if is_eligible_for_move {
+            let (final_turn_a, _) = move_bean(nbean, i, turn_a, &mut state);
+            turn_a = final_turn_a;
+        }
+        
+        if is_eligible_for_draw_ui {
+            draw_ui(&state);
+        }
+        
+        is_eligible_for_move = false;
+        is_eligible_for_draw_ui = false;
+        is_start = false;
+
+        println!("It is {}'s turn", if turn_a { "A" } else { "B" });
+        
         let mut vsum = 0;
         for (k, v) in state.iter() {
             if *k == 0 || *k == 7 {
@@ -76,23 +125,30 @@ fn generate_state() -> Result<BTreeMap<i32, i32>, io::Error> {
             break;
         }
     }
-    println!();
 
     Ok(state)
 }
 
-fn move_bean(nbean: i32, mut i: i32, turn_a: bool, state: &mut BTreeMap<i32, i32>) -> bool {
+fn move_bean(nbean: i32, mut i: i32, turn_a: bool, state: &mut BTreeMap<i32, i32>) -> (bool, i32) {
     for _ in 0..nbean {
         i = if i == 13 { 0 } else { i + 1 };
         *state.entry(i).or_insert(0) += 1;
     }
 
-    let turn_a_ret = match *state.entry(i).or_insert(0) == 1 {
+    /*
+        TODO: Make sure input 0 or 7 doesn't exit.
+    */
+    let final_turn_a = match *state.entry(i).or_insert(0) == 1 {
         true => !turn_a,
-        false => turn_a,
+        false => match i == 0 || i == 7 {
+            true => !turn_a,
+            false => turn_a,
+        }
     };
 
-    turn_a_ret
+    let last_key = i;
+
+    (final_turn_a, last_key)
 }
 
 fn draw_ui(state: &BTreeMap<i32, i32>) {
@@ -125,11 +181,13 @@ fn draw_ui(state: &BTreeMap<i32, i32>) {
     }
 
     println!();
-    println!();
 }
 
 fn main() {
     println!("Hole location is denoted by 0-13, going from leftmost in clockwise.");
+    println!("You can move bean in location 1-6 and 8-13.");
+    println!();
+    println!();
 
     match generate_state() {
         Ok(_) => println!("Thank you for playing"),
